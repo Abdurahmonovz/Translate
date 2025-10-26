@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aqlli Tarjima Boti - Mini App</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader">
+            <div class="loader-spinner"></div>
+            <p>Yuklanmoqda...</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container" id="mainContainer">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">🤖</span>
+                    <h1>Aqlli Tarjima</h1>
+                </div>
+                <div class="user-info">
+                    <div class="user-stats">
+                        <span class="stat-badge" id="limitCount">25 ta limit</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Translation Section -->
+        <main class="main-content">
+            <!-- Language Selection -->
+            <section class="language-section">
+                <h2 class="section-title">🌐 Tarjima turini tanlang</h2>
+                <div class="language-grid">
+                    <button class="lang-btn active" data-lang="uz_en">
+                        <span class="flag">🇺🇿 → 🇬🇧</span>
+                        <span class="lang-name">O'zbekcha - Inglizcha</span>
+                    </button>
+                    <button class="lang-btn" data-lang="en_uz">
+                        <span class="flag">🇬🇧 → 🇺🇿</span>
+                        <span class="lang-name">Inglizcha - O'zbekcha</span>
+                    </button>
+                    <button class="lang-btn" data-lang="uz_ru">
+                        <span class="flag">🇺🇿 → 🇷🇺</span>
+                        <span class="lang-name">O'zbekcha - Ruscha</span>
+                    </button>
+                    <button class="lang-btn" data-lang="ru_uz">
+                        <span class="flag">🇷🇺 → 🇺🇿</span>
+                        <span class="lang-name">Ruscha - O'zbekcha</span>
+                    </button>
+                    <button class="lang-btn" data-lang="ru_en">
+                        <span class="flag">🇷🇺 → 🇬🇧</span>
+                        <span class="lang-name">Ruscha - Inglizcha</span>
+                    </button>
+                    <button class="lang-btn" data-lang="en_ru">
+                        <span class="flag">🇬🇧 → 🇷🇺</span>
+                        <span class="lang-name">Inglizcha - Ruscha</span>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Text Input -->
+            <section class="input-section">
+                <div class="input-group">
+                    <label for="sourceText" class="input-label">Matn kiriting:</label>
+                    <textarea 
+                        id="sourceText" 
+                        class="text-input" 
+                        placeholder="Tarjima qilmoqchi bo'lgan matnni shu yerga yozing..."
+                        rows="5"
+                        maxlength="4000"
+                    ></textarea>
+                    <div class="input-footer">
+                        <span class="char-count" id="charCount">0/4000</span>
+                        <button class="clear-btn" id="clearBtn">Tozalash</button>
+                    </div>
+                </div>
+
+                <button class="translate-btn" id="translateBtn">
+                    <span class="btn-icon">🔄</span>
+                    Tarjima qilish
+                </button>
+            </section>
+
+            <!-- Result Section -->
+            <section class="result-section" id="resultSection" style="display: none;">
+                <h2 class="section-title">📋 Natija</h2>
+                <div class="result-card">
+                    <div class="result-header">
+                        <span class="result-label">Tarjima:</span>
+                        <button class="copy-btn" id="copyBtn">
+                            <span class="copy-icon">📋</span>
+                            Nusxalash
+                        </button>
+                    </div>
+                    <div class="result-text" id="resultText">
+                        Tarjima natijasi shu yerda ko'rinadi...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Statistics -->
+            <section class="stats-section">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="totalTranslations">0</div>
+                            <div class="stat-label">Jami tarjimalar</div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <div class="stat-number" id="remainingLimit">25</div>
+                            <div class="stat-label">Qolgan limit</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-page="translate">
+                <span class="nav-icon">🔤</span>
+                <span class="nav-label">Tarjima</span>
+            </button>
+            <button class="nav-btn" data-page="payment">
+                <span class="nav-icon">💎</span>
+                <span class="nav-label">To'lov</span>
+            </button>
+            <button class="nav-btn" data-page="stats">
+                <span class="nav-icon">📈</span>
+                <span class="nav-label">Statistika</span>
+            </button>
+            <button class="nav-btn" data-page="help">
+                <span class="nav-icon">ℹ️</span>
+                <span class="nav-label">Yordam</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>💎 Premium Obuna</h3>
+                <button class="close-btn" id="closePaymentModal">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="payment-info">
+                    <div class="payment-item">
+                        <span class="payment-label">Karta raqami:</span>
+                        <div class="payment-value">
+                            <code>6262 7300 8597 6613</code>
+                            <button class="copy-small-btn" data-text="6262 7300 8597 6613">📋</button>
+                        </div>
+                    </div>
+                    <div class="payment-item">
+                        <span class="payment-label">Karta egasi:</span>
+                        <span class="payment-value">Abdurahmonov Zayniddin</span>
+                    </div>
+                    <div class="payment-item">
+                        <span class="payment-label">To'lov summasi:</span>
+                        <span class="payment-value">2,000 so'm</span>
+                    </div>
+                </div>
+                <div class="payment-note">
+                    💡 To'lov qilgach, skrinshotni <strong>@LOGO_55</strong> ga yuboring
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
