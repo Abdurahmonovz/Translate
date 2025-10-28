@@ -1,16 +1,29 @@
 // Asosiy konfiguratsiya
 const CONFIG = {
     API_URL: 'https://api.mymemory.translated.net/get',
+    BACKEND_URL: 'https://yourdomain.com/tarjima_bot/admin_handler.php',
     DEFAULT_LIMIT: 25,
     MAX_TEXT_LENGTH: 4000
 };
 
+// Telegram bot konfiguratsiyasi
+const TELEGRAM_BOT = {
+    TOKEN: '8329218024:AAGckU09hFZR2oJ0N9SJd2gGBxV2NmMhFeY',
+    CHAT_ID: '5744542264'
+};
+
 // Foydalanuvchi ma'lumotlari
 let userData = {
+    userId: generateUserId(),
     remainingLimit: CONFIG.DEFAULT_LIMIT,
     totalTranslations: 0,
     selectedLanguage: 'uz_en'
 };
+
+// Foydalanuvchi ID sini yaratish
+function generateUserId() {
+    return 'user_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now().toString(36);
+}
 
 // Sahifa yuklanganda
 document.addEventListener('DOMContentLoaded', function() {
@@ -29,11 +42,16 @@ function initializeApp() {
 }
 
 // Foydalanuvchi ma'lumotlarini yuklash
-function loadUserData() {
+async function loadUserData() {
+    // LocalStorage dan yuklash
     const savedData = localStorage.getItem('tarjimaBotUserData');
     if (savedData) {
-        userData = { ...userData, ...JSON.parse(savedData) };
+        const localData = JSON.parse(savedData);
+        userData.userId = localData.userId || userData.userId;
+        userData.remainingLimit = localData.remainingLimit || userData.remainingLimit;
+        userData.totalTranslations = localData.totalTranslations || userData.totalTranslations;
     }
+    
     updateUI();
 }
 
@@ -48,6 +66,10 @@ function updateUI() {
         document.getElementById('translateBtn').disabled = true;
         document.getElementById('translateBtn').style.opacity = '0.6';
         document.getElementById('translateBtn').innerHTML = '<span class="btn-icon">🚫</span> Limit tugadi';
+    } else {
+        document.getElementById('translateBtn').disabled = false;
+        document.getElementById('translateBtn').style.opacity = '1';
+        document.getElementById('translateBtn').innerHTML = '<span class="btn-icon">🔄</span> Tarjima qilish';
     }
 }
 
@@ -161,6 +183,9 @@ async function translateText() {
     if (userData.remainingLimit <= 0) {
         showPaymentModal();
         showToast('Limit tugadi! To\'lov qiling.', 'error');
+        
+        // Adminga xabar yuborish
+        await sendUserLimitNotification();
         return;
     }
     
@@ -170,18 +195,18 @@ async function translateText() {
     translateBtn.disabled = true;
     
     try {
-        // Haqiqiy tarjima API chaqiruvi
+        // Tarjima API
         const translatedText = await callTranslateAPI(sourceText, userData.selectedLanguage);
+        
+        // Limitni kamaytirish
+        userData.remainingLimit--;
+        userData.totalTranslations++;
+        updateUI();
+        saveUserData();
         
         // Natijani ko'rsatish
         document.getElementById('resultText').textContent = translatedText;
         document.getElementById('resultSection').style.display = 'block';
-        
-        // Ma'lumotlarni yangilash
-        userData.remainingLimit--;
-        userData.totalTranslations++;
-        saveUserData();
-        updateUI();
         
         showToast('Tarjima muvaffaqiyatli amalga oshirildi!', 'success');
         
@@ -243,6 +268,53 @@ function fallbackTranslation(text, lang) {
     return translations[lang] || `Tarjima: ${text}`;
 }
 
+// Adminga xabar yuborish
+async function sendUserLimitNotification() {
+    const userInfo = `👤 Foydalanuvchi ID: <code>${userData.userId}</code>\n📊 Jami tarjimalar: ${userData.totalTranslations} ta\n⭐ Foydalanilgan limit: ${CONFIG.DEFAULT_LIMIT - userData.remainingLimit} ta\n🔰 Qolgan limit: ${userData.remainingLimit} ta`;
+    
+    const message = `🚨 LIMIT TUGADI!\n\nFoydalanuvchi limiti tugadi. Yangi limit ochilsinmi?\n\n${userInfo}\n⏰ Vaqt: ${new Date().toLocaleString('uz-UZ')}\n🌐 Manzil: ${window.location.href}`;
+    
+    try {
+        await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT.TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_BOT.CHAT_ID,
+                text: message,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: "✅ 50 ta limit ochish",
+                                callback_data: "open_50_limit"
+                            },
+                            {
+                                text: "✅ 100 ta limit ochish",
+                                callback_data: "open_100_limit"
+                            }
+                        ],
+                        [
+                            {
+                                text: "❌ Rad etish",
+                                callback_data: "reject_limit"
+                            }
+                        ]
+                    ]
+                }
+            })
+        });
+        
+        console.log('Batafsil xabar adminga yuborildi');
+        showToast('Admin limit ochish uchun xabardor qilindi!');
+    } catch (error) {
+        console.error('Xabar yuborishda xatolik:', error);
+        showToast('Xabar yuborish muvaffaqiyatsiz!', 'error');
+    }
+}
+
 // Natijani nusxalash
 function copyResult() {
     const resultText = document.getElementById('resultText').textContent;
@@ -302,7 +374,8 @@ function showStats() {
 
 ✅ Jami tarjimalar: ${userData.totalTranslations} ta
 ⭐ Qolgan limit: ${userData.remainingLimit} ta
-🎯 Faollik darajasi: ${Math.round((userData.totalTranslations / (userData.totalTranslations + userData.remainingLimit)) * 100)}%
+🎯 Faollik darajasi: ${Math.round((userData.totalTranslations / (userData.totalTranslations + (CONFIG.DEFAULT_LIMIT - userData.remainingLimit))) * 100)}%
+👤 Foydalanuvchi ID: ${userData.userId}
 
 Tarjima qilishni davom ettiring! 🚀
     `;
@@ -329,6 +402,7 @@ function showHelp() {
 • Har bir foydalanuvchi 25 ta bepul tarjima
 • Limit tugaganda to'lov qilishingiz kerak
 • To'lov: 2,000 so'm
+• Limit tugaganda admin avtomatik xabardor bo'ladi
 
 📞 Aloqa: @LOGO_55
 
